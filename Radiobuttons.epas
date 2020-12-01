@@ -1,0 +1,138 @@
+    procedure RbOnChange(Sender: TObject);
+    var Cb:TdxCheckBox;
+        Rb:TRadioButton;
+        Fm : TdxForm;
+    begin
+       Rb := TRadioButton(Sender);
+       Cb := TdxCheckBox(Rb.Owner);
+       Fm := TdxForm(Cb.Owner);
+       if not (Fm.State in [dsEdit,dsInsert]) then exit;
+       if Rb.Checked then Cb.Field.Value:=1 else Cb.Field.Value:=0;
+    end;
+     
+    procedure CbOnChange(Sender: TObject);
+    var Cb:TdxCheckBox;
+    Rb:TRadioButton;
+    NE:TNotifyEvent;
+    begin
+      Cb := TdxCheckBox(Sender);
+      Rb := TRadioButton(cb.FindComponent('Rb_'+Cb.Name));
+      if Rb<>nil then
+      begin
+       NE:=Rb.OnChange;
+       Rb.OnChange:=nil;
+       Rb.Checked := Cb.Checked;
+       Rb.OnChange:=NE;
+       NE:=nil;
+      end;
+    end;
+     
+    procedure Self_OnAfterScroll(Sender: TObject);
+    var i:integer;
+        Fm:TdxForm;
+    begin
+      Fm:=TdxForm(Sender);
+      for i:=0 to Fm.ComponentCount-1 do
+      if Fm.Components[i].ClassNAme = 'TdxCheckBox' then
+      if TdxCheckBox(Fm.Components[i]).Components[0]<>nil
+      then
+      CbOnChange(TdxCheckBox(Fm.Components[i]));
+    end;
+     
+    procedure Self_OnStateChange(Sender: TObject);
+    var i:integer;
+        Fm:TdxForm;
+    begin
+      Fm:=TdxForm(Sender);
+      for i:=0 to Fm.ComponentCount-1 do
+      if Fm.Components[i].ClassNAme = 'TdxCheckBox' then
+      if TdxCheckBox(Fm.Components[i]).Components[0]<>nil
+      then
+      TRadioButton(Fm.Components[i].Components[0]).Enabled :=
+      (Fm.State in [dsEdit,dsInsert])
+    end;
+     
+     
+    {@module
+    author=Develop-Soft [ https://forum.develop-soft.ru ]
+    version=1.0
+    description=Меню
+    Действия:
+    1. Конструктор радиокнопок из флажков
+     
+    Изменения:
+    v 1
+    ...
+    @}
+     
+    {@action
+    Id=9AA650E8-BD7E-422F-A116-C52B0C07F6A3
+    Target=form
+    OrigName=GropRadio
+    Name=Конструктор радиокнопок из флажков
+    Group=Радиокнопки
+    UI=
+    <ui>
+    <checkbox name="ActionEnabled" caption="Действие включено" defaultvalue=1/>
+    <divider/>
+    <component name="radio_group" caption="Группа флажков:" filter="TdxGroupBox"
+    required=1/>
+    <expr name="GroupCaption" caption="Заголовок группы:"/>
+    </ui>
+    Description=
+    <p style="font-family:Roboto">
+    <b>"Конструктор радиокнопок". Создает радиокнопки-заменители
+    "Флажков", расположенных в указанной "Группе". </b><br><br>
+    <b>Настраиваемые опции:</b><br><br>
+    <b>[Группа флажков] <i>(обязательная)</i></b> -
+    "Группа", внутри которой расположены компоненты типа "Флажок". Другие компоненты,
+    находящиеся в группе - будут игнорированы.<br><br>
+    <b>[Заголовок группы] <i>(необязательная)</i></b> -
+    Собственный заголок для группы, формируемый указанным выражением.
+    При пустом выражении отображается заголовок прописанный в дизайнере.
+    <p>
+     
+    @}
+     
+     
+    procedure GropRadio(ActionEnabled:integer; GroupBox,GroupCaption:string);
+    var
+      RbArr: array of TRadioButton;
+      GB:TdxGroupBox;
+      Cb:TdxCheckBox;
+      i:integer;
+      Cap:variant;
+    begin
+    if ActionEnabled<>1 then exit;
+    GB:=TdxGroupBox(Self.FindComponent(GroupBox));
+    Cap := EvalExpr(GroupCaption,Self);
+    if Cap <> null then
+    GB.Caption := VarToStr(Cap);
+    for i:=0 to Self.ComponentCount-1 do
+      if (Self.Components[i].ClassName = 'TdxCheckBox') then
+        if (TControl(Self.Components[i]).Parent = Gb) then
+          begin
+          Cb:=TdxCheckBox(Self.Components[i]);
+          SetArrayLength(RbArr,length(RbArr)+1);
+          RbArr[length(RbArr)-1]:=TRadioButton.Create(Cb)
+          with RbArr[length(RbArr)-1] do
+            begin
+            Parent:=GB;
+            Left:=Cb.Left
+            Top:=Cb.Top;
+            TabOrder:=Cb.TabOrder;
+            Checked:=Cb.Checked;
+            Name:='Rb_'+Cb.Name;
+            Caption:=Cb.Caption;
+            Font:=Cb.Font;
+            Anchors:=Cb.Anchors;
+            Align := Cb.Align;
+            Cb.TabStop:=false;
+            Cb.Hide;
+            OnChange:=@RbOnChange;
+            Cb.OnChange:=@CbOnChange;
+            Self.OnAfterScroll:=@Self_OnAfterScroll;
+            Self.OnStateChange := @Self_OnStateChange;
+            end;
+          end;
+    end;
