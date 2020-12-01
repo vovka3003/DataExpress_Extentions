@@ -1,4 +1,5 @@
     procedure RbOnChange(Sender: TObject);
+    
     var Cb:TdxCheckBox;
         Rb:TRadioButton;
         Fm : TdxForm;
